@@ -46,34 +46,80 @@ with tab1:
     st.dataframe(df, use_container_width=True)
 
 # 탭 2: 주요 요약 지표
+# 탭 2: 주요 요약 지표
 with tab2:
     st.subheader("📌 2010년 대비 2024년 변화 (KPI)")
 
-    row_2010 = df[df["연도"] == 2010].iloc[0]
-    row_2024 = df[df["연도"] == 2024].iloc[0]
+    # 해당 연도 행 추출 (데이터가 없을 수 있으므로 예외 처리)
+    df_2010 = df[df["연도"] == 2010]
+    df_2024 = df[df["연도"] == 2024]
+
+    row_2010 = df_2010.iloc[0] if not df_2010.empty else None
+    row_2024 = df_2024.iloc[0] if not df_2024.empty else None
 
     col1, col2, col3 = st.columns(3)
+
+    # 안전하게 값 변환하는 함수
+    def safe_int(val):
+        if pd.isna(val) or val is None:
+            return None
+        try:
+            return int(val)
+        except (ValueError, TypeError):
+            return None
+
+    def safe_float(val):
+        if pd.isna(val) or val is None:
+            return None
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return None
+
+    # col1: 총인구
     with col1:
-        st.metric(
-            "총인구",
-            f"{int(row_2024['총인구']):,} 명",
-            f"{int(row_2024['총인구'] - row_2010['총인구']):,} 명",
-        )
+        pop_2024 = safe_int(row_2024['총인구']) if row_2024 is not None else None
+        pop_2010 = safe_int(row_2010['총인구']) if row_2010 is not None else None
+
+        val_str = f"{pop_2024:,} 명" if pop_2024 is not None else "데이터 없음"
+        
+        if pop_2024 is not None and pop_2010 is not None:
+            delta_str = f"{pop_2024 - pop_2010:,} 명"
+        else:
+            delta_str = None
+
+        st.metric("총인구", val_str, delta_str)
+
+    # col2: 유소년층 비중
     with col2:
-        st.metric(
-            "유소년층 (0-19세) 비중",
-            f"{row_2024['0-19세_비중(%)']}%",
-            f"{(row_2024['0-19세_비중(%)'] - row_2010['0-19세_비중(%)']):.2f}%p",
-        )
+        ratio1_2024 = safe_float(row_2024['0-19세_비중(%)']) if row_2024 is not None else None
+        ratio1_2010 = safe_float(row_2010['0-19세_비중(%)']) if row_2010 is not None else None
+
+        val_str2 = f"{ratio1_2024:.1f}%" if ratio1_2024 is not None else "데이터 없음"
+        
+        if ratio1_2024 is not None and ratio1_2010 is not None:
+            delta_str2 = f"{ratio1_2024 - ratio1_2010:.1f}%p"
+        else:
+            delta_str2 = None
+
+        st.metric("유소년층 (0-19세) 비중", val_str2, delta_str2)
+
+    # col3: 고령층 비중
     with col3:
-        st.metric(
-            "고령층 (60세 이상) 비중",
-            f"{row_2024['60세_비중(%)']}%",
-            f"{(row_2024['60세_비중(%)'] - row_2010['60세_비중(%)']):.2f}%p",
-        )
+        ratio2_2024 = safe_float(row_2024['60세_비중(%)']) if row_2024 is not None else None
+        ratio2_2010 = safe_float(row_2010['60세_비중(%)']) if row_2010 is not None else None
+
+        val_str3 = f"{ratio2_2024:.1f}%" if ratio2_2024 is not None else "데이터 없음"
+        
+        if ratio2_2024 is not None and ratio2_2010 is not None:
+            delta_str3 = f"{ratio2_2024 - ratio2_2010:.1f}%p"
+        else:
+            delta_str3 = None
+
+        st.metric("고령층 (60세 이상) 비중", val_str3, delta_str3)
 
     st.markdown("---")
-    st.subheader("📐 기술통계량")
+    st.subheader("📊 기술통계량")
     st.dataframe(df.describe().round(2), use_container_width=True)
 
 # 탭 3: 연령대별 인구 추이 그래프
